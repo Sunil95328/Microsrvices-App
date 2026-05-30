@@ -10,6 +10,7 @@ on:
 permissions:
   id-token: write
   contents: read
+  pull-requests: write # Required for posting comments on PRs
 
 jobs:
   terraform:
@@ -31,7 +32,22 @@ jobs:
         terraform_version: "1.7.0"
 
     - name: Terraform Format
-      run: terraform fmt -check
+      run: terraform fmt -check -recursive
+      working-directory: .
+
+    - name: Run tfsec
+      uses: aquasecurity/tfsec-pr-commenter-action@v1.3.1
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        working_directory: .
+
+    - name: Run Checkov
+      uses: bridgecrewio/checkov-action@master
+      with:
+        directory: .
+        framework: terraform
+        quiet: true
+        soft_fail: true # Set to false to block PRs on security failures
 
     - name: Terraform Init
       run: terraform init
