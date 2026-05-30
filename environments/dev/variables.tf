@@ -8,9 +8,9 @@ variable "resource_groups" {
 variable "container_registries" {
   type = map(object({
     resource_group_name = string
-    sku                = optional(string, "Standard")
-    admin_enabled      = optional(bool, false)
-    tags               = optional(map(string), {})
+    sku                 = optional(string, "Standard")
+    admin_enabled       = optional(bool, false)
+    tags                = optional(map(string), {})
   }))
 }
 

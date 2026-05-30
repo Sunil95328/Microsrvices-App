@@ -5,7 +5,7 @@ variable "kubernetes_clusters" {
     location            = string
     dns_prefix          = string
     kubernetes_version  = optional(string)
-    
+
     default_node_pool = object({
       name                = string
       node_count          = optional(number, 1)

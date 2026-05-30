@@ -5,7 +5,7 @@ module "resource_groups" {
 
 module "acr" {
   source = "../../modules/acr"
-  
+
   container_registries = {
     for k, v in var.container_registries : k => merge(v, {
       location = module.resource_groups.resource_groups[v.resource_group_name].location
