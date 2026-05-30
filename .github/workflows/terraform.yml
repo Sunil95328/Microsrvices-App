@@ -6,7 +6,9 @@ on:
   pull_request:
     branches: [ "main" ]
 
+# Required for OIDC authentication
 permissions:
+  id-token: write
   contents: read
 
 jobs:
@@ -35,9 +37,9 @@ jobs:
       run: terraform init
       env:
         ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
-        ARM_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
         ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
         ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+        ARM_USE_OIDC: true
 
     - name: Terraform Validate
       run: terraform validate
@@ -46,6 +48,6 @@ jobs:
       run: terraform plan -input=false
       env:
         ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
-        ARM_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
         ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
         ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+        ARM_USE_OIDC: true
