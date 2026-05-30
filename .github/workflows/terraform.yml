@@ -1,4 +1,4 @@
-name: 'Terraform CI'
+name: 'Terraform CI/CD'
 
 on:
   push:
@@ -10,11 +10,11 @@ on:
 permissions:
   id-token: write
   contents: read
-  pull-requests: write # Required for posting comments on PRs
+  pull-requests: write
 
 jobs:
-  terraform:
-    name: 'Terraform'
+  terraform-plan:
+    name: 'Terraform Plan'
     runs-on: ubuntu-latest
 
     defaults:
@@ -46,7 +46,7 @@ jobs:
         directory: .
         framework: terraform
         quiet: true
-        soft_fail: true # Set to false to block PRs on security failures
+        soft_fail: true
 
     - name: Terraform Init
       run: terraform init
@@ -60,7 +60,57 @@ jobs:
       run: terraform validate
 
     - name: Terraform Plan
-      run: terraform plan -input=false
+      id: plan
+      run: terraform plan -input=false -out=tfplan
+      env:
+        ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+        ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+        ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+        ARM_USE_OIDC: true
+
+    # Upload the plan as an artifact for the Apply job
+    - name: Upload Plan
+      uses: actions/upload-artifact@v4
+      with:
+        name: tfplan
+        path: environments/dev/tfplan
+
+  terraform-apply:
+    name: 'Terraform Apply'
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    needs: terraform-plan
+    runs-on: ubuntu-latest
+    environment: dev # Use this to enable manual approval in GitHub UI
+
+    defaults:
+      run:
+        working-directory: ./environments/dev
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Setup Terraform
+      uses: hashicorp/setup-terraform@v3
+      with:
+        terraform_version: "1.7.0"
+
+    - name: Download Plan
+      uses: actions/download-artifact@v4
+      with:
+        name: tfplan
+        path: environments/dev
+
+    - name: Terraform Init
+      run: terraform init
+      env:
+        ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+        ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+        ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+        ARM_USE_OIDC: true
+
+    - name: Terraform Apply
+      run: terraform apply -auto-approve tfplan
       env:
         ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
         ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
