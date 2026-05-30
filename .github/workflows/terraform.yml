@@ -80,7 +80,6 @@ jobs:
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     needs: terraform-plan
     runs-on: ubuntu-latest
-    environment: dev # Use this to enable manual approval in GitHub UI
 
     defaults:
       run:
